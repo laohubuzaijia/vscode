@@ -154,6 +154,7 @@ app.on('ready', () => {
 			preload: path.join(__dirname, '..', '..', '..', 'src', 'vs', 'base', 'parts', 'sandbox', 'electron-browser', 'preload.js'), // ensure similar environment as VSCode as tests may depend on this
 			additionalArguments: [`--vscode-window-config=vscode:test-vscode-window-config`],
 			nodeIntegration: true,
+			contextIsolation: false,
 			enableWebSQL: false,
 			enableRemoteModule: false,
 			spellcheck: false,
