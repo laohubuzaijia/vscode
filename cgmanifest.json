@@ -40,7 +40,7 @@
 				"SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
 			],
 			"isOnlyProductionDependency": true,
-			"version": "89.0.4389.69"
+			"version": "89.0.4389.90"
 		},
 		{
 			"component": {
@@ -60,12 +60,12 @@
 				"git": {
 					"name": "electron",
 					"repositoryUrl": "https://github.com/electron/electron",
-					"commitHash": "3ae63c9a06a4b5c9074572ee8b7137520fe4ba4e"
+					"commitHash": "17c970b6a2fd07ac3c63809c25831e7aba8775f0"
 				}
 			},
 			"isOnlyProductionDependency": true,
 			"license": "MIT",
-			"version": "12.0.0"
+			"version": "12.0.2"
 		},
 		{
 			"component": {
