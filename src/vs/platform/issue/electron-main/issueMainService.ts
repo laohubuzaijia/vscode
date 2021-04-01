@@ -288,7 +288,9 @@ export class IssueMainService implements ICommonIssueService {
 			backgroundColor: backgroundColor || IssueMainService.DEFAULT_BACKGROUND_COLOR,
 			webPreferences: {
 				preload: FileAccess.asFileUri('vs/base/parts/sandbox/electron-browser/preload.js', require).fsPath,
-				additionalArguments: [`--vscode-window-config=${ipcObjectUrl.resource.toString()}`],
+				// FIXME: Use process.contextIsolateed when 13-x-y is adopted
+				// https://github.com/electron/electron/pull/28030
+				additionalArguments: [`--vscode-window-config=${ipcObjectUrl.resource.toString()}`, '--context-isolation'],
 				v8CacheOptions: 'bypassHeatCheck',
 				enableWebSQL: false,
 				enableRemoteModule: false,
