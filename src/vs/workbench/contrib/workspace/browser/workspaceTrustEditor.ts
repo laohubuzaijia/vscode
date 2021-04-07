@@ -10,6 +10,7 @@ import { Action } from 'vs/base/common/actions';
 import * as arrays from 'vs/base/common/arrays';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { Codicon, registerCodicon } from 'vs/base/common/codicons';
+import { debounce } from 'vs/base/common/decorators';
 import { Iterable } from 'vs/base/common/iterator';
 import { splitName } from 'vs/base/common/labels';
 import { DisposableStore, toDisposable } from 'vs/base/common/lifecycle';
@@ -21,7 +22,7 @@ import { URI } from 'vs/base/common/uri';
 import { localize } from 'vs/nls';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
-import { ExtensionWorkspaceTrustRequirement, getExtensionWorkspaceTrustRequirement } from 'vs/platform/extensions/common/extensions';
+import { ExtensionWorkspaceTrustRequestType, getExtensionWorkspaceTrustRequestType } from 'vs/platform/extensions/common/extensions';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IPromptChoiceWithMenu } from 'vs/platform/notification/common/notification';
 import { Link } from 'vs/platform/opener/browser/link';
@@ -182,8 +183,15 @@ export class WorkspaceTrustEditor extends EditorPane {
 		}
 	}
 
+	private rendering = false;
 	private rerenderDisposables: DisposableStore = this._register(new DisposableStore());
+	@debounce(100)
 	private async render(model: WorkspaceTrustEditorModel) {
+		if (this.rendering) {
+			return;
+		}
+
+		this.rendering = true;
 		this.rerenderDisposables.clear();
 
 		// Header Section
@@ -287,8 +295,8 @@ export class WorkspaceTrustEditor extends EditorPane {
 
 		// Features List
 		const installedExtensions = await this.instantiationService.invokeFunction(getInstalledExtensions);
-		const onDemandExtensions = await this.getExtensionsByTrustRequirement(installedExtensions, 'onDemand');
-		const onStartExtensions = await this.getExtensionsByTrustRequirement(installedExtensions, 'onStart');
+		const onDemandExtensions = await this.getExtensionsByTrustRequestType(installedExtensions, 'onDemand');
+		const onStartExtensions = await this.getExtensionsByTrustRequestType(installedExtensions, 'onStart');
 
 		this.renderExtensionList(
 			localize('onStartExtensions', "Disabled Extensions"),
@@ -306,10 +314,11 @@ export class WorkspaceTrustEditor extends EditorPane {
 		this.trustSettingsTree.setChildren(null, Iterable.map(this.workspaceTrustSettingsTreeModel.settings, s => { return { element: s }; }));
 
 		this.bodyScrollBar.scanDomNode();
+		this.rendering = false;
 	}
 
-	private async getExtensionsByTrustRequirement(extensions: IExtensionStatus[], trustRequirement: ExtensionWorkspaceTrustRequirement): Promise<IExtension[]> {
-		const filtered = extensions.filter(ext => getExtensionWorkspaceTrustRequirement(ext.local.manifest) === trustRequirement);
+	private async getExtensionsByTrustRequestType(extensions: IExtensionStatus[], trustRequestType: ExtensionWorkspaceTrustRequestType): Promise<IExtension[]> {
+		const filtered = extensions.filter(ext => getExtensionWorkspaceTrustRequestType(ext.local.manifest) === trustRequestType);
 		const ids = filtered.map(ext => ext.identifier.id);
 
 		return getExtensions(ids, this.extensionWorkbenchService);
@@ -382,14 +391,31 @@ export class WorkspaceTrustEditor extends EditorPane {
 	}
 
 	private onDidChangeSetting(change: IWorkspaceTrustSettingChangeEvent) {
+		const applyChangesWithPrompt = async (showPrompt: boolean, applyChanges: () => void) => {
+			if (showPrompt) {
+				const message = localize('workspaceTrustSettingModificationMessage', "Update Workspace Trust Settings");
+				const detail = localize('workspaceTrustTransitionDetail', "In order to safely complete this action, all affected windows will have to be reloaded. Are you sure you want to proceed with this action?");
+				const primaryButton = localize('workspaceTrustTransitionPrimaryButton', "Yes");
+				const secondaryButton = localize('workspaceTrustTransitionSecondaryButton', "No");
+
+				const result = await this.dialogService.confirm({ type: 'info', message, detail, primaryButton, secondaryButton });
+				if (!result.confirmed) {
+					return;
+				}
+			}
+
+			applyChanges();
+		};
+
+
 		if (this.workspaceTrustEditorModel) {
 			if (isArray(change.value)) {
 				if (change.key === 'trustedFolders') {
-					this.workspaceTrustEditorModel.dataModel.setTrustedFolders(change.value);
+					applyChangesWithPrompt(change.type === 'changed' || change.type === 'removed', () => this.workspaceTrustEditorModel.dataModel.setTrustedFolders(change.value!));
 				}
 
 				if (change.key === 'untrustedFolders') {
-					this.workspaceTrustEditorModel.dataModel.setUntrustedFolders(change.value);
+					applyChangesWithPrompt(change.type === 'changed' || change.type === 'added', () => this.workspaceTrustEditorModel.dataModel.setUntrustedFolders(change.value!));
 				}
 			}
 		}
