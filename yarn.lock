@@ -10084,10 +10084,9 @@ vscode-ripgrep@^1.11.2:
     https-proxy-agent "^4.0.0"
     proxy-from-env "^1.1.0"
 
-vscode-sqlite3@4.0.10:
+vscode-sqlite3@microsoft/vscode-node-sqlite3#cfa67632187259672624267ded08a2e1f7a81955:
   version "4.0.10"
-  resolved "https://registry.yarnpkg.com/vscode-sqlite3/-/vscode-sqlite3-4.0.10.tgz#cf34cd98e5a49b24d3bb5ff5f2058744931f7cee"
-  integrity sha512-oYH3Nff3AMfbZpDiOhUh+hVtxClwrXBt9SGHGed+RcKf1Z4/fkLpfaldZeWgn4YBHFjNJjJ8HHRRfVvB8fXj1w==
+  resolved "https://codeload.github.com/microsoft/vscode-node-sqlite3/tar.gz/cfa67632187259672624267ded08a2e1f7a81955"
   dependencies:
     nan "^2.14.0"
 
